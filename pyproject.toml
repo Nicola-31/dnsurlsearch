@@ -22,9 +22,9 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Documentation = "https://github.com/unknown/dnsurlsearch#readme"
-Issues = "https://github.com/unknown/dnsurlsearch/issues"
-Source = "https://github.com/unknown/dnsurlsearch"
+Documentation = "https://github.com/Nicola-31/dnsurlsearch#readme"
+Issues = "https://github.com/Nicola-31/dnsurlsearch/issues"
+Source = "https://github.com/Nicola-31/dnsurlsearch"
 
 [tool.hatch.version]
 path = "src/dnsurlsearch/__about__.py"
