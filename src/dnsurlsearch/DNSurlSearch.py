@@ -565,13 +565,13 @@ class SnifferCacheHandler(CacheHandler):
         # pid = subprocess.Popen(my_cmd, shell=True).pid
         # os.spawnl(os.P_NOWAIT,'/usr/bin/sudo', my_cmd)
         os.system(my_cmd)
-        my_logger.debug(datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S'))
+        my_logger.debug(datetime.datetime.today().strftime('%d-%m-%Y %H:%M:%S'))
         if self.mode == AUTOMATIC:
             my_logger.debug('Waiting for %d seconds (%d minutes) before killing sniffer' %(self.timing, self.timing/60))
             time.sleep(self.timing)
         else:
             a = input("Type enter to stop tcpdump...")
-        my_logger.debug(datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S'))
+        my_logger.debug(datetime.datetime.today().strftime('%d-%m-%Y %H:%M:%S'))
         my_logger.debug(SnifferCacheHandler.kill_cmd)
         os.system(SnifferCacheHandler.kill_cmd)
         CacheHandler._date_size_cache_dns(SnifferCacheHandler.bind_cache_file)
