@@ -44,7 +44,7 @@ some of these urls are not advertisements, so that we also need whitelist.
 Whitelist generation is supposed to be manually. The script is launched and severals youTube video are played without any advertisement
 to get url like *.googlevideo.com. without advertisement.
 
-Here is an example of script example.py (need to configure sudo to get rid of password) :
+Here is an example of script example1.py (need to configure sudo to get rid of password) :
 
 ```python
 
@@ -57,7 +57,7 @@ whitelist = DNSurlSearch.UrlFilter()
 cache = DNSurlSearch.CacheDns()
 
 # Set the SnifferCacheHandler to snif DNS protocol
-h = DNSurlSearch.SnifferCacheHandler('MANUAL')
+h = DNSurlSearch.SnifferCacheHandler(DNSurlSearch.MANUAL)
 h.set_cache_file_name('/tmp/log')
 
 # The sniffer used is tcpdump
@@ -164,9 +164,106 @@ nb_url_end = blacklist.write_url('blacklist')
 stats.save_stats(nb_url_start, nb_url_end, 144)
 ```
 
-Here is an example of another script that can be launched on a host 
-where DNS protocol can be sniffed with tcpdump :
+Here is an example of another script example3.py that can be launched on a host 
+where DNS protocol can be sniffed with tcpdump. The handler is initialized in automatic mode during 600 seconds. 
+After 600 seconds, the sniffer is automatically killed by the handler.
 ```python
+from dnsurlsearch import DNSurlSearch
+
+# Read Whitelist if any
+whitelist = DNSurlSearch.UrlFilter()
+whitelist.read_url('whitelist')
+
+# To get some measurements of urls found in the cache sent by mail
+# See https://docs.python.org/2.6/library/logging.html?highlight=logger#smtp-handler for more information on parameters
+# Mesure period                          : 2024-02-05 18:51:01.128016 - 2024-02-05 18:51:42.497950
+#        Number of new url found on the period  : 4
+#        Total number of url found              : 4
+stats = DNSurlSearch.CacheDnsStat(<mailhost>, <fromaddrmail>, <toaddrsmail>, 'Filtered url stats')
+
+# First create url filter
+# '0.0.0.0' parameter is the IP address to add in the file for each url
+blacklist = DNSurlSearch.UrlFilter('0.0.0.0', 'black_list')
+
+# treatment  
+#  - when reading blacklist file : remove ip_address to get url only
+#  - when writting blacklist file : add ip_address 
+blacklist.set_treatment(DNSurlSearch.BlackListFilterTreatment())
+
+nb_url_start = blacklist.read_url('blacklist')
+
+# Create the cache
+cache = DNSurlSearch.CacheDns()
+
+# Set the SnifferCacheHandler to snif DNS protocol
+h = DNSurlSearch.SnifferCacheHandler(AUTOMATIC, 600)
+h.set_cache_file_name('/tmp/log')
+
+# The sniffer used is tcpdump
+# The executable file tcpdump_cache_dns.sh contains the following command :
+# "/usr/bin/tcpdump -n -s 0 port 53 > $1 &"
+# to sniff DNS protocol
+h.set_start_cmd('sudo /home/<user>/tcpdump_cache_dns.sh')
+# The executable file k_tcpdump_cache_dns.sh contains the following command :
+# "pkill tcpdump"
+# to kill process
+h.set_kill_cmd('sudo /home/<user>/k_tcpdump_cache_dns.sh')
+cache.set_handler(h)
+
+# Set patterns to search in the cache
+cache.set_filter('.googlevideo.com.')
+
+# Launch the update of cache and search urls
+new_cache = cache.get_cache_dns()
+
+# Add urls found in the blacklist
+blacklist.add(new_cache)
+
+# Check urls and remove url from blacklist if present in whitelist
+blacklist.check(whitelist.get_url())
+
+nb_url_end = blacklist.write_url('blacklist')
+
+stats.save_stats(nb_url_start, nb_url_end, 144)
+
+```
+
+```bash
+$ python3 example3.py level=debug
+2024-03-03 11:55:05,115 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 140 ------------------- UrlFilter.read_url() -------------------
+2024-03-03 11:55:05,115 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 140 ------------------- UrlFilter.read_url() -------------------
+2024-03-03 11:55:05,115 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 313 ----------------- CacheDns.set_handler()() -----------------
+2024-03-03 11:55:05,115 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 317 ----------------- CacheDns.set_filter()() ------------------
+2024-03-03 11:55:05,115 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 319 filters : ['.googlevideo.com.']
+2024-03-03 11:55:05,115 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 561 --------------------- init_dns_cache() ---------------------
+2024-03-03 11:55:05,115 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 563 sudo /home/<user>/tcpdump_cache_dns.sh /tmp/log
+2024-03-03 11:55:05,122 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 569 Waiting for 20 seconds (0 minutes) before killing sniffer
+2024-03-03 11:55:05,122 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 570 2024-03-03 11:55:05
+2024-03-03 11:55:25,133 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 572 2024-03-03 11:55:25
+2024-03-03 11:55:25,133 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 575 sudo /home/<user>/k_tcpdump_cache_dns.sh
+2024-03-03 11:55:25,173 dnsurlsearch.DNSurlSearch INFO DNSurlSearch.py 343 Cache DNS : /tmp/log 03-03-2024 11:55 0.9453125 Ko
+2024-03-03 11:55:25,173 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 360 ---------------- CacheHandler._search_url() ----------------
+2024-03-03 11:55:25,173 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 361  pattern : ['.* (.+\\.googlevideo\\.com\\.).*'] - filename : Found_url.txt
+2024-03-03 11:55:25,173 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 375 Le cache est vide
+2024-03-03 11:55:25,173 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 184 --------------------- UrlFilter.add() ----------------------
+2024-03-03 11:55:25,173 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 185  Number of url to add : 0
+2024-03-03 11:55:25,173 dnsurlsearch.DNSurlSearch INFO DNSurlSearch.py 192 0 New urls inserted
+2024-03-03 11:55:25,173 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 158 ------------------- UrlFilter.get_url() --------------------
+2024-03-03 11:55:25,173 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 196 -------------------- UrlFilter.check() ---------------------
+2024-03-03 11:55:25,173 dnsurlsearch.DNSurlSearch INFO DNSurlSearch.py 204 0 Urls deleted (whitelist)
+2024-03-03 11:55:25,173 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 167 ------------------ UrlFilter.write_url() -------------------
+2024-03-03 11:55:25,174 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 168  Number of urls to write : 0 - file name : blacklist 
+2024-03-03 11:55:25,174 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 267 ---------------- CacheDnsStat.save_stats() -----------------
+2024-03-03 11:55:25,174 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 282 Start date: 2024-03-03 11:50:00.388145
+ nb url orig: 0 total nb url: 0
+2024-03-03 11:55:25,174 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 236 --------------- CacheDnsStat.send_message() ----------------
+2024-03-03 11:55:25,174 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 237 Start date : 2024-03-03 11:50:00.388145
+ nb new url : 0 total nb url : 0
+2024-03-03 11:55:25,212 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 246 Message : 
+Mesure period                          : 2024-03-03 11:50:00.388145 - 2024-03-03 11:55:25.174378
+Number of new url found on the period  : 0
+Total number of url found              : 0
+
 ```
 
 # License

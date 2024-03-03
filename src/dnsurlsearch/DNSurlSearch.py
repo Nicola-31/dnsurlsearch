@@ -331,6 +331,18 @@ class CacheHandler(object):
     """Class that manage DNS cache"""
 
     @staticmethod
+    def _date_size_cache_dns(fich):
+        """
+        Log the date and size of the cache file for bind software to check the update
+        :param fich: File name
+        :return: None
+        """
+        stat_r = os.stat(fich)
+        my_time_str = datetime.datetime.fromtimestamp(stat_r.st_mtime).strftime('%d-%m-%Y %H:%M')
+        my_str = "Cache DNS : {} {} {} Ko".format(fich, my_time_str, stat_r.st_size / 1024)
+        my_logger.info(my_str)
+
+    @staticmethod
     def _search_string(pattern, filename):
         my_logger.debug(" CacheHandler._search_string() ".center(60, '-'))
         my_logger.debug(" pattern : %s - filename : %s" %(pattern,filename))
@@ -445,18 +457,6 @@ class BindCacheHandler(CacheHandler):
         """
         BindCacheHandler.kill_cmd = cmd
 
-    @staticmethod
-    def _date_size_cache_dns(fich):
-        """
-        Log the date and size of the cache file for bind software to check the update
-        :param fich: File name
-        :return: None
-        """
-        stat_r = os.stat(fich)
-        my_time_str = datetime.datetime.fromtimestamp(stat_r.st_mtime).strftime('%d-%m-%Y %H:%M')
-        my_str = "Cache DNS : {} {} {} Ko".format(fich, my_time_str, stat_r.st_size / 1024)
-        my_logger.info(my_str)
-
     def set_cache_file_name(self, file_name):
         """
         File name of the cache of bind software
@@ -473,7 +473,7 @@ class BindCacheHandler(CacheHandler):
         """
         os.system(BindCacheHandler.start_cmd)
         time.sleep(2)
-        BindCacheHandler._date_size_cache_dns(BindCacheHandler.bind_cache_file)
+        CacheHandler._date_size_cache_dns(BindCacheHandler.bind_cache_file)
 
     def dns_cache_selection(self, pattern):
         """
@@ -565,12 +565,16 @@ class SnifferCacheHandler(CacheHandler):
         # pid = subprocess.Popen(my_cmd, shell=True).pid
         # os.spawnl(os.P_NOWAIT,'/usr/bin/sudo', my_cmd)
         os.system(my_cmd)
+        my_logger.debug(datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S'))
         if self.mode == AUTOMATIC:
+            my_logger.debug('Waiting for %d seconds (%d minutes) before killing sniffer' %(self.timing, self.timing/60))
             time.sleep(self.timing)
         else:
             a = input("Type enter to stop tcpdump...")
+        my_logger.debug(datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S'))
         my_logger.debug(SnifferCacheHandler.kill_cmd)
         os.system(SnifferCacheHandler.kill_cmd)
+        CacheHandler._date_size_cache_dns(SnifferCacheHandler.bind_cache_file)
 
     def dns_cache_selection(self, pattern):
         """
