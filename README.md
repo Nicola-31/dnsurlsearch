@@ -8,7 +8,7 @@
 **Table of Contents**
 
 - [Installation](#Installation)
-- [Getting started](#Getting started)
+- [Getting started](#Getting_started)
 - [Whitelist](#Whitelist)
 - [Blacklist](#Blacklist)
 - [License](#License)
@@ -19,7 +19,7 @@
 pip install dnsurlsearch
 ```
 
-# Getting started
+# Getting_started
 This package allow you to build a whitelist like that :
 ```
 rr1.sn-cv0tb0xn-uane.googlevideo.com.
@@ -87,7 +87,7 @@ whitelist.write_url('whitelist')
 ```
 You can launch this script with debug option (debug, info, warning, error, critical)
 ```bash
-$ python3 example.py debug
+$ python3 example.py level=debug
 2024-02-26 10:02:30,531 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 278 ----------------- CacheDns.set_handler()() -----------------
 2024-02-26 10:02:30,531 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 282 ----------------- CacheDns.set_filter()() ------------------
 2024-02-26 10:02:30,531 dnsurlsearch.DNSurlSearch DEBUG DNSurlSearch.py 284 filters : ['.googlevideo.com.']

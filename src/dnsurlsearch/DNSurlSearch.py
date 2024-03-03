@@ -24,10 +24,35 @@ LEVELS = {'debug': logging.DEBUG,
           'error': logging.ERROR,
           'critical': logging.CRITICAL}
 
+def get_params(param_name):
+    """
+    Detection of an argument on the command line like <param_name>=<value>
+    Return <value> if any or ''
+    Example :
+      level=debug
+      01234567890
+           ^
+      p_name=5
+    """
+    p_name = len(param_name)
+    ret=''
+    if len(sys.argv)>1:
+        for ar in range(len(sys.argv)):
+            arg = sys.argv[ar]
+            # print("arg : %s" % arg)
+            a = len(arg)
+            if a > p_name:
+                # print("arg[p_name] : %s" %arg[p_name])
+                # print("arg[0:p_name-1] : %s" %arg[0:p_name])
+                if arg[p_name] == '=' and arg[0:p_name] == param_name:
+                    ret = arg[p_name+1:]
+    # print("Return value : %s" %ret)
+    return ret
+
 level = logging.NOTSET  # Par défaut, pas de log
 
-if len(sys.argv) > 1:
-    level_name = sys.argv[1]
+level_name = get_params('level')
+if level_name:
     level = LEVELS.get(level_name, logging.NOTSET)
 
 my_logger = logging.getLogger(__name__)
