@@ -328,7 +328,7 @@ class CacheDns(object):
 
 
 class CacheHandler(object):
-    """Class that manage DNS cache"""
+    """Generic Cache handler"""
 
     @staticmethod
     def _date_size_cache_dns(fich):
@@ -344,6 +344,12 @@ class CacheHandler(object):
 
     @staticmethod
     def _search_string(pattern, filename):
+        """
+        Search <pattern> in <filename> and store result in <search_file_name>
+        :param pattern: pattern to search
+        :param filename: filename where to search pattern
+        :return:
+        """
         my_logger.debug(" CacheHandler._search_string() ".center(60, '-'))
         my_logger.debug(" pattern : %s - filename : %s" %(pattern,filename))
         search_file_string = "/bin/grep %s %s>%s" % (pattern[0], filename, search_file_name)
@@ -357,6 +363,12 @@ class CacheHandler(object):
 
     @staticmethod
     def _search_url(pattern, file_name):
+        """
+        Search <pattern> in <file_name>
+        :param pattern: pattern to search
+        :param file_name: file name where to search pattern
+        :return: return pattern found
+        """
         my_logger.debug(" CacheHandler._search_url() ".center(60, '-'))
         my_logger.debug(" pattern : %s - filename : %s" %(pattern,file_name))
 
@@ -415,9 +427,9 @@ class CacheHandler(object):
 
 
 class BindCacheHandler(CacheHandler):
-    """Cache manager for bind softare installed on local host."""
+    """Cache handler for DNS softare (bind9) installed on local host."""
     # Localization of bind cache (default)
-    bind_cache_file = "/var/cache/bind/named_dump.db"
+    cache_file = "/var/cache/bind/named_dump.db"
     start_cmd = ""
     kill_cmd = ""
     # Regular expression to apply on pattern to get only URLs (default)
@@ -463,7 +475,7 @@ class BindCacheHandler(CacheHandler):
         :param file_name: File name 'ex: /var/cache/bind/named_dump.db on Linux Ubuntu)
         :return: None
         """
-        BindCacheHandler.bind_cache_file = file_name
+        BindCacheHandler.cache_file = file_name
 
     def init_dns_cache(self):
         """
@@ -473,7 +485,7 @@ class BindCacheHandler(CacheHandler):
         """
         os.system(BindCacheHandler.start_cmd)
         time.sleep(2)
-        CacheHandler._date_size_cache_dns(BindCacheHandler.bind_cache_file)
+        CacheHandler._date_size_cache_dns(BindCacheHandler.cache_file)
 
     def dns_cache_selection(self, pattern):
         """
@@ -483,7 +495,7 @@ class BindCacheHandler(CacheHandler):
         """
         # First selection to only get lines with patterns
         my_logger.debug(" dns_cache_selection() ".center(60, '-'))
-        CacheHandler._search_string(pattern, BindCacheHandler.bind_cache_file)
+        CacheHandler._search_string(pattern, BindCacheHandler.cache_file)
 
         # Second selection to get only url with pattern
         urls_found = []
@@ -498,10 +510,10 @@ class BindCacheHandler(CacheHandler):
 
 
 class SnifferCacheHandler(CacheHandler):
-    """Cache manager for sniffer softare (like tcpdump)."""
+    """Cache handler for sniffer softare (like tcpdump)."""
 
     # Localization of bind cache (default)
-    bind_cache_file = "/tmp/log"
+    cache_file = "/tmp/log"
     start_cmd = ""
     kill_cmd = ""
     # Regular expression to apply on pattern to get only URLs (default)
@@ -532,7 +544,7 @@ class SnifferCacheHandler(CacheHandler):
         :param file_name: File name 'ex: /tmp/log)
         :return: None
         """
-        SnifferCacheHandler.bind_cache_file = file_name
+        SnifferCacheHandler.cache_file = file_name
 
     @staticmethod
     def set_start_cmd(cmd):
@@ -559,22 +571,21 @@ class SnifferCacheHandler(CacheHandler):
         :return: None
         """
         my_logger.debug(" init_dns_cache() ".center(60, '-'))
-        my_cmd = "%s %s" % (SnifferCacheHandler.start_cmd, SnifferCacheHandler.bind_cache_file)
-        my_logger.debug(my_cmd)
-        # subprocess.Popen([my_cmd, " "])
-        # pid = subprocess.Popen(my_cmd, shell=True).pid
-        # os.spawnl(os.P_NOWAIT,'/usr/bin/sudo', my_cmd)
-        os.system(my_cmd)
+        if SnifferCacheHandler.start_cmd:
+            my_cmd = "%s %s" % (SnifferCacheHandler.start_cmd, SnifferCacheHandler.cache_file)
+            my_logger.debug(my_cmd)
+            os.system(my_cmd)
         my_logger.debug(datetime.datetime.today().strftime('%d-%m-%Y %H:%M:%S'))
         if self.mode == AUTOMATIC:
-            my_logger.debug('Waiting for %d seconds (%d minutes) before killing sniffer' %(self.timing, self.timing/60))
+            my_logger.debug('Waiting for %d seconds (%d minutes)' %(self.timing, self.timing/60))
             time.sleep(self.timing)
         else:
             a = input("Type enter to stop tcpdump...")
         my_logger.debug(datetime.datetime.today().strftime('%d-%m-%Y %H:%M:%S'))
-        my_logger.debug(SnifferCacheHandler.kill_cmd)
-        os.system(SnifferCacheHandler.kill_cmd)
-        CacheHandler._date_size_cache_dns(SnifferCacheHandler.bind_cache_file)
+        if SnifferCacheHandler.kill_cmd:
+            my_logger.debug(SnifferCacheHandler.kill_cmd)
+            os.system(SnifferCacheHandler.kill_cmd)
+        CacheHandler._date_size_cache_dns(SnifferCacheHandler.cache_file)
 
     def dns_cache_selection(self, pattern):
         """
@@ -590,7 +601,7 @@ class SnifferCacheHandler(CacheHandler):
             ex = []
             for i in range(len(SnifferCacheHandler.reg_ex)):
                 ex.append(SnifferCacheHandler.reg_ex[i].format(pat))
-            for url in CacheHandler._search_url(ex, search_file_name):
+            for url in CacheHandler._search_url(ex, SnifferCacheHandler.cache_file):
                 urls_found.append(url)
         return urls_found
 
